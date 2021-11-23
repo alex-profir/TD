@@ -78,7 +78,10 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+
+            state = 14;
+            return FSM_NOT_READY;
+            // return FSM_INVALID;
         }
     case 3:
         if (current_chr == 'R')
