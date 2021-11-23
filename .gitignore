@@ -1,0 +1,10 @@
+
+/*
+
+!.gitignore
+!src/
+!README.md
+
+/src/scripts/*
+!/src/scripts/compile.sh
+!/src/scripts/compile_debug.sh
