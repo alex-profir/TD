@@ -5,9 +5,10 @@ int commands_length = 0;
 
 void setFlag(const char *flag)
 {
+    const int flagLength = strlen(flag);
     for (int i = 0; i < AT_COMMAND_FLAG_SIZE; i++)
     {
-        if (i < strlen(flag))
+        if (i < flagLength)
             date.flag[i] = flag[i];
         else
         {
