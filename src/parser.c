@@ -2,6 +2,19 @@
 #include <stdio.h>
 #include <string.h>
 int commands_length = 0;
+
+void setFlag(const char *flag)
+{
+    for (int i = 0; i < AT_COMMAND_FLAG_SIZE; i++)
+    {
+        if (i < strlen(flag))
+            date.flag[i] = flag[i];
+        else
+        {
+            date.flag[i] = '\0';
+        }
+    }
+}
 FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState)
 {
     static uint8_t state = 0;
@@ -23,6 +36,8 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
                 date.data[i][j] = -1;
             }
         }
+        // reset the flag
+        setFlag("");
         state = 0;
         date.line_count = 0;
         index_col = 0;
@@ -78,8 +93,8 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-
             state = 14;
+            setFlag(SPECIAL_TRANSMISSION);
             return FSM_NOT_READY;
             // return FSM_INVALID;
         }
@@ -245,6 +260,10 @@ void printData()
             }
         }
         printf("\n");
+    }
+    if (date.flag[0] != '\0')
+    {
+        printf("Has flag  %s\n", date.flag);
     }
 }
 
