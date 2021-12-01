@@ -7,14 +7,21 @@
 #define AT_COMMAND_MAX_LINE_SIZE 100
 #define AT_MAX_COMMANDS 100
 #define AT_COMMAND_FLAG_SIZE 10
-#define SPECIAL_TRANSMISSION "SPECIAL"
+
+// Flag enum
+typedef enum
+{
+    NO_FLAG = 0,
+    SPECIAL_TRANSMISSION
+} AT_COMMAND_FLAG;
+
 // Data types
 typedef struct
 {
     uint8_t data[AT_COMMAND_MAX_LINES][AT_COMMAND_MAX_LINE_SIZE];
     uint8_t line_count;
     uint8_t status;
-    uint8_t flag[AT_COMMAND_FLAG_SIZE];
+    AT_COMMAND_FLAG flag;
 } AT_COMMAND_DATA;
 
 AT_COMMAND_DATA commands[AT_MAX_COMMANDS];
