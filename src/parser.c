@@ -16,7 +16,6 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
 
     if (date.status == FSM_RESET)
     {
-
         for (int i = 0; i < date.line_count; i++)
         {
             for (int j = 0; j < AT_COMMAND_MAX_LINE_SIZE; j++)
@@ -34,9 +33,13 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
 
     if (current_chr == LF)
     {
-        date.data[date.line_count][index_col] = '\0';
-        index_col = 0;
-        date.line_count++;
+
+        if (date.line_count < AT_COMMAND_MAX_LINES)
+        {
+            date.data[date.line_count][index_col] = '\0';
+            index_col = 0;
+            date.line_count++;
+        }
     }
     switch (state)
     {
@@ -51,7 +54,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 1:
         if (current_chr == LF)
@@ -61,7 +64,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 2:
         if (current_chr == 'O')
@@ -94,7 +97,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 4:
         if (current_chr == 'R')
@@ -104,7 +107,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 5:
         if (current_chr == 'O')
@@ -114,7 +117,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 6:
         if (current_chr == 'R')
@@ -124,7 +127,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 7:
         if (current_chr == CR)
@@ -134,17 +137,17 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 8:
         if (current_chr == LF)
         {
             state = 0;
-            return FSM_READY_WITH_ERROR;
+            return FSM_READY_OK;
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 10:
         if (current_chr == 'K')
@@ -154,7 +157,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 11:
         if (current_chr == CR)
@@ -164,7 +167,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 12:
         if (current_chr == LF)
@@ -172,12 +175,15 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
             state = 0;
             return FSM_READY_OK;
         }
-        return FSM_INVALID;
+        return FSM_READY_WITH_ERROR;
     case 14:
     {
         if (32 <= current_chr && current_chr <= 126)
         {
-            date.data[date.line_count][index_col++] = current_chr;
+            if (date.line_count < AT_COMMAND_MAX_LINES)
+            {
+                date.data[date.line_count][index_col++] = current_chr;
+            }
             return FSM_NOT_READY;
         }
         else if (current_chr == CR)
@@ -187,7 +193,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     }
     case 15:
@@ -214,7 +220,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
     case 18:
         if (current_chr == 'O')
@@ -227,14 +233,14 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         }
         else
         {
-            return FSM_INVALID;
+            return FSM_READY_WITH_ERROR;
         }
         return FSM_NOT_READY;
     default:
         printf("Default for value %d \n", current_chr);
         break;
     }
-    return FSM_INVALID;
+    return FSM_READY_WITH_ERROR;
 }
 void printData()
 {
@@ -268,7 +274,7 @@ uint8_t at_parse_line(const char *line)
         printf("Line is %s\n", line);
         printf("Condition is %d , status is %d\n", condition, date.status);
 #endif
-        for (uint8_t i = 0; i < strlen(line) && (date.status == FSM_NOT_READY || date.status != FSM_INVALID); i++)
+        for (uint8_t i = 0; i < strlen(line) && (date.status == FSM_NOT_READY || date.status != FSM_READY_WITH_ERROR); i++)
         {
             uint8_t status = at_command_parse(line[i], &finalState);
             date.status = status;

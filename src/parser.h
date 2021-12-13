@@ -35,7 +35,7 @@ typedef enum
     FSM_NOT_READY,
     FSM_READY_OK,
     FSM_READY_WITH_ERROR,
-    FSM_INVALID,
+    // FSM_INVALID,
     FSM_RESET
 } FSM_RETURN_VALUE;
 

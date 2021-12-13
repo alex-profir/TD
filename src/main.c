@@ -35,7 +35,8 @@ void read_parse_file(const char *filename)
             printf("Lines: %d\n\n", date.line_count);
             date.status = FSM_RESET;
 
-            commands[commands_length++] = date;
+            commands_length++;
+            // commands[commands_length++] = date;
         }
         else if (date.status == FSM_READY_WITH_ERROR)
         {
