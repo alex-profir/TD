@@ -12,13 +12,15 @@
 typedef enum
 {
     NO_FLAG = 0,
-    SPECIAL_TRANSMISSION
+    SPECIAL_TRANSMISSION,
+    SMS_TRANSMISSION
 } AT_COMMAND_FLAG;
 
 // Data types
 typedef struct
 {
     uint8_t data[AT_COMMAND_MAX_LINES][AT_COMMAND_MAX_LINE_SIZE];
+    // uint8_t sms[AT_COMMAND_MAX_LINES][AT_COMMAND_MAX_LINE_SIZE];
     uint8_t line_count;
     uint8_t status;
     AT_COMMAND_FLAG flag;

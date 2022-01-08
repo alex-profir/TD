@@ -1,7 +1,22 @@
 #include "parser.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 int commands_length = 0;
+
+void saveCharacterWithAddress(const uint8_t current_chr, uint8_t *index_col, uint8_t *address)
+{
+
+    if (date.line_count < AT_COMMAND_MAX_LINES && *index_col < AT_COMMAND_MAX_LINE_SIZE)
+    {
+        *(address + *index_col) = current_chr;
+        *index_col = *index_col + 1;
+    }
+}
+void saveCharacter(const uint8_t current_chr, uint8_t *index_col)
+{
+    saveCharacterWithAddress(current_chr, index_col, date.data[date.line_count]);
+}
 
 FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState)
 {
@@ -10,6 +25,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
 
     *finalState = state;
 #ifdef DEBUG
+    printf("Status: %d\n", date.status);
     printf("State %d\n", state);
     printf("parsing %d (%c)\n", current_chr, (char)current_chr);
 #endif
@@ -20,7 +36,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         {
             for (int j = 0; j < AT_COMMAND_MAX_LINE_SIZE; j++)
             {
-                date.data[i][j] = -1;
+                date.data[i][j] = '\0';
             }
         }
         // reset the flag
@@ -31,16 +47,6 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         date.status = FSM_NOT_READY;
     }
 
-    if (current_chr == LF)
-    {
-
-        if (date.line_count < AT_COMMAND_MAX_LINES)
-        {
-            date.data[date.line_count][index_col] = '\0';
-            index_col = 0;
-            date.line_count++;
-        }
-    }
     switch (state)
     {
     case 0:
@@ -86,6 +92,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         {
             state = 14;
             date.flag = SPECIAL_TRANSMISSION;
+            saveCharacter(current_chr, &index_col);
             return FSM_NOT_READY;
             // return FSM_INVALID;
         }
@@ -180,10 +187,7 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
     {
         if (32 <= current_chr && current_chr <= 126)
         {
-            if (date.line_count < AT_COMMAND_MAX_LINES)
-            {
-                date.data[date.line_count][index_col++] = current_chr;
-            }
+            saveCharacter(current_chr, &index_col);
             return FSM_NOT_READY;
         }
         else if (current_chr == CR)
@@ -200,12 +204,26 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
         if (current_chr == LF)
         {
             state = 16;
+            if (date.line_count < AT_COMMAND_MAX_LINES)
+            {
+                date.data[date.line_count][index_col - 1] = '\0';
+                index_col = 0;
+                date.line_count++;
+            }
         }
         return FSM_NOT_READY;
     case 16:
+        // printf("In 16  %d (%c)", current_chr, (char)current_chr);
         if (current_chr == '+')
         {
             state = 14;
+        }
+        else if (32 <= current_chr && current_chr <= 126)
+        {
+            date.flag = SMS_TRANSMISSION;
+            saveCharacter(current_chr, &index_col);
+            // saveCharacterWithAddress(current_chr, &sms_index_col, date.data[date.line_count]);
+            state = 19;
         }
         else if (current_chr == CR)
         {
@@ -236,6 +254,58 @@ FSM_RETURN_VALUE at_command_parse(const uint8_t current_chr, uint8_t *finalState
             return FSM_READY_WITH_ERROR;
         }
         return FSM_NOT_READY;
+    case 19:
+        if (32 <= current_chr && current_chr <= 126)
+        {
+            saveCharacter(current_chr, &index_col);
+            return FSM_NOT_READY;
+        }
+        else if (current_chr == CR)
+        {
+            state = 20;
+            return FSM_NOT_READY;
+        }
+        else
+        {
+            return FSM_READY_WITH_ERROR;
+        }
+    case 20:
+        if (current_chr == LF)
+        {
+            state = 21;
+            if (date.line_count < AT_COMMAND_MAX_LINES)
+            {
+                date.data[date.line_count][index_col - 1] = '\0';
+                index_col = 0;
+                date.line_count++;
+            }
+            return FSM_NOT_READY;
+        }
+        else
+        {
+            return FSM_READY_WITH_ERROR;
+        }
+        break;
+    case 21:
+        if (current_chr == CR)
+        {
+            state = 22;
+            return FSM_NOT_READY;
+        }
+        else
+        {
+            return FSM_READY_WITH_ERROR;
+        }
+    case 22:
+        if (current_chr == LF)
+        {
+            state = 2;
+            return FSM_NOT_READY;
+        }
+        else
+        {
+            return FSM_READY_WITH_ERROR;
+        }
     default:
         printf("Default for value %d \n", current_chr);
         break;
@@ -246,14 +316,19 @@ void printData()
 {
     for (int i = 0; i < date.line_count; i++)
     {
+        printf("%d: ", i);
         for (int j = 0; date.data[i][j] != '\0'; j++)
         {
-            if (date.data[i][j] != 0)
+            if (date.data[i][j] != '\0')
             {
                 printf("%c", date.data[i][j]);
             }
         }
         printf("\n");
+    }
+    if (date.flag == SMS_TRANSMISSION)
+    {
+        printf("SMS transmission\n");
     }
     if (date.flag != NO_FLAG)
     {

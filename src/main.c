@@ -30,7 +30,7 @@ void read_parse_file(const char *filename)
         if (date.status == FSM_READY_OK)
         {
             printf("FSM READY OK\n");
-            printf("Data is");
+            printf("Data is \n");
             printData();
             printf("Lines: %d\n\n", date.line_count);
             date.status = FSM_RESET;
